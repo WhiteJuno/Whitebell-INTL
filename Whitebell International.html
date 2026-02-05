@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <title>Whitebell International</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-deep: #000000;
+            --bg-card: #121212;
+            --bg-hover: #1a1a1a;
+            --text-main: #ffffff;
+            --text-dim: #a1a1aa;
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --border: #27272a;
+            --radius: 24px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 60px);
+            padding-bottom: 80px;
+            line-height: 1.5;
+        }
+
+        /* POWERFUL LOADING SCREEN */
+        #loader {
+            position: fixed; inset: 0;
+            background: #000;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease-out;
+        }
+        .loader-logo {
+            font-weight: 300;
+            font-size: 1.5rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #fff;
+            animation: fadeInOut 2s infinite alternate;
+        }
+        @keyframes fadeInOut { from { opacity: 0.3; } to { opacity: 1; } }
+
+        /* BRANDING */
+        .brand-nav {
+            max-width: 1100px;
+            margin: 0 auto 40px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-logo { 
+            font-weight: 700; font-size: 1rem; 
+            letter-spacing: 2px; text-transform: uppercase; 
+        }
+
+        /* MAIN SUMMARY */
+        .summary-box {
+            max-width: 1100px;
+            margin: 0 auto 50px auto;
+            text-align: center;
+        }
+        .total-label { font-size: 0.85rem; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .total-amount { font-size: clamp(3rem, 10vw, 4.5rem); font-weight: 800; letter-spacing: -3px; margin: 10px 0; }
+        
+        .badge-pl {
+            display: inline-flex;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            background: #111;
+            border: 1px solid var(--border);
+        }
+
+        /* HOLDINGS GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover { border-color: #3f3f46; background: var(--bg-hover); transform: translateY(-4px); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
+        .ticker-name { font-size: 1.25rem; font-weight: 800; }
+        .live-price { font-size: 1rem; font-weight: 600; color: var(--text-dim); }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .stat-group span { display: block; }
+        .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+        .stat-value { font-size: 0.95rem; font-weight: 600; }
+
+        .card-footer {
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* CHART SECTION */
+        .chart-section {
+            max-width: 1100px;
+            margin: 80px auto 40px auto;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 40px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .chart-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 30px; }
+        .chart-wrapper { max-width: 500px; margin: 0 auto; position: relative; }
+
+        /* COLORS */
+        .green { color: var(--emerald); }
+        .red { color: var(--rose); }
+
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="loader-logo">Whitebell International</div>
+    </div>
+
+    <nav class="brand-nav">
+        <div class="brand-logo">Whitebell International</div>
+        <div style="font-size: 0.8rem; color: var(--text-dim)">Global Private Wealth</div>
+    </nav>
+
+    <header class="summary-box">
+        <div class="total-label">Total Portfolio Value</div>
+        <div class="total-amount" id="mainBalance">$0.00</div>
+        <div class="badge-pl" id="mainPL">
+            <span id="plText">Syncing...</span>
+        </div>
+    </header>
+
+    <main class="grid" id="portfolioGrid"></main>
+
+    <section class="chart-section">
+        <div class="chart-title">Asset Allocation</div>
+        <div class="chart-wrapper">
+            <canvas id="assetChart"></canvas>
+        </div>
+    </section>
+
+<script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4yW6c71viKRN29tZJTjhX-A8m16RGPBZhQGh41HPvZ74f4INr2RO5fSH1n7brNKu5Fooja3oy_8Z0/pub?gid=0&single=true&output=csv";
+    const PROXY = "https://corsproxy.io/?" + encodeURIComponent(SHEET_URL);
+
+    async function updateDashboard() {
+        try {
+            const response = await fetch(PROXY);
+            const data = await response.text();
+            processData(data);
+        } catch (e) {
+            console.error("Fetch error:", e);
+        }
+    }
+
+    function processData(csv) {
+        const rows = csv.split('\n').slice(1);
+        const grid = document.getElementById('portfolioGrid');
+        grid.innerHTML = ""; // Clear existing
+
+        let totalMktValue = 0;
+        let totalCost = 0;
+        
+        // Distribution Data
+        const tickers = [];
+        const values = [];
+
+        rows.forEach(row => {
+            const cols = row.replace(/"/g, '').split(',');
+            if(cols.length < 4) return;
+
+            const name = cols[0].trim().toUpperCase();
+            const price = parseFloat(cols[1]);
+            const cost = parseFloat(cols[2]);
+            const qty = parseFloat(cols[3]);
+
+            if(isNaN(price) || isNaN(qty)) return;
+
+            const mktValue = price * qty;
+            const costBasis = cost * qty;
+            const pl = mktValue - costBasis;
+            const plPct = (pl / costBasis) * 100;
+
+            totalMktValue += mktValue;
+            totalCost += costBasis;
+
+            // Collect for Chart
+            tickers.push(name);
+            values.push(mktValue);
+
+            // Render Card
+            grid.innerHTML += `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="ticker-name">${name}</span>
+                        <span class="live-price">$${price.toLocaleString()}</span>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-group"><span class="stat-label">Shares</span><span class="stat-value">${qty}</span></div>
+                        <div class="stat-group" style="text-align:right"><span class="stat-label">Market Value</span><span class="stat-value">$${mktValue.toLocaleString(undefined, {minimumFractionDigits:2})}</span></div>
+                        <div class="stat-group"><span class="stat-label">Avg Cost</span><span class="stat-value">$${cost.toLocaleString()}</span></div>
+                        <div class="stat-group" style="text-align:right"><span class="stat-label">Return</span><span class="stat-value ${pl >= 0 ? 'green' : 'red'}">${pl >= 0 ? '▲' : '▼'} ${Math.abs(plPct).toFixed(2)}%</span></div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="total-label" style="margin:0">Total P&L</span>
+                        <span class="stat-value ${pl >= 0 ? 'green' : 'red'}" style="font-size:1.1rem; font-weight:800">
+                            ${pl >= 0 ? '+' : ''}$${pl.toLocaleString(undefined, {minimumFractionDigits:2})}
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+
+        updateHeader(totalMktValue, totalCost);
+        renderChart(tickers, values);
+        
+        // Smooth transition out of loader
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = "0";
+            setTimeout(() => document.getElementById('loader').style.display = "none", 800);
+        }, 1000);
+    }
+
+    function updateHeader(total, cost) {
+        const pl = total - cost;
+        const pct = (pl / cost) * 100;
+        document.getElementById('mainBalance').innerText = `$${total.toLocaleString(undefined, {maximumFractionDigits:0})}`;
+        const plText = document.getElementById('plText');
+        plText.innerText = `${pl >= 0 ? '+' : ''}$${pl.toLocaleString()} (${pct.toFixed(2)}%) Total Return`;
+        plText.className = pl >= 0 ? 'green' : 'red';
+    }
+
+    function renderChart(labels, data) {
+        const ctx = document.getElementById('assetChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#ffffff', '#10b981', '#3f3f46', '#71717a', '#a1a1aa', '#27272a'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '85%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#a1a1aa', font: { family: 'Inter', size: 12 }, padding: 20 }
+                    }
+                }
+            }
+        });
+    }
+
+    updateDashboard();
+</script>
+</body>
+</html>
