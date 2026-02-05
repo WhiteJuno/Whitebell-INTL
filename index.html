@@ -56,6 +56,16 @@
             color: #fff;
             animation: fadeInOut 2s infinite alternate;
         }
+        .loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.12);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            margin-top: 14px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeInOut { from { opacity: 0.3; } to { opacity: 1; } }
 
         /* BRANDING */
@@ -141,6 +151,7 @@
         /* COLORS */
         .green { color: var(--emerald); }
         .red { color: var(--rose); }
+        .mxn-small { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; margin-top: 6px; display:block; margin-left:auto; margin-right:auto }
 
     </style>
 </head>
@@ -148,6 +159,7 @@
 
     <div id="loader">
         <div class="loader-logo">Whitebell International</div>
+        <div class="loader-spinner" aria-hidden="true"></div>
     </div>
 
     <nav class="brand-nav">
@@ -158,6 +170,7 @@
     <header class="summary-box">
         <div class="total-label">Total Portfolio Value</div>
         <div class="total-amount" id="mainBalance">$0.00</div>
+        <div id="mainBalanceMXN" class="mxn-small">MXN $0.00</div>
         <div class="badge-pl" id="mainPL">
             <span id="plText">Syncing...</span>
         </div>
@@ -178,21 +191,27 @@
 
     async function updateDashboard() {
         try {
-            const response = await fetch(PROXY);
+            const [response, fxResp] = await Promise.all([
+                fetch(PROXY),
+                fetch('https://api.exchangerate.host/latest?base=USD&symbols=MXN')
+            ]);
             const data = await response.text();
-            processData(data);
+            let usdToMxn = 18.0;
+            try { const fxJson = await fxResp.json(); usdToMxn = fxJson?.rates?.MXN || usdToMxn; } catch(e) { console.warn('FX fetch failed, using fallback', e); }
+            processData(data, usdToMxn);
         } catch (e) {
             console.error("Fetch error:", e);
         }
     }
 
-    function processData(csv) {
+    function processData(csv, usdToMxn = 18.0) {
         const rows = csv.split('\n').slice(1);
         const grid = document.getElementById('portfolioGrid');
         grid.innerHTML = ""; // Clear existing
 
         let totalMktValue = 0;
         let totalCost = 0;
+        let totalPL_MXN = 0;
         
         // Distribution Data
         const tickers = [];
@@ -213,6 +232,9 @@
             const costBasis = cost * qty;
             const pl = mktValue - costBasis;
             const plPct = (pl / costBasis) * 100;
+
+            const plMXN = pl * usdToMxn;
+            totalPL_MXN += plMXN;
 
             totalMktValue += mktValue;
             totalCost += costBasis;
@@ -236,15 +258,18 @@
                     </div>
                     <div class="card-footer">
                         <span class="total-label" style="margin:0">Total P&L</span>
-                        <span class="stat-value ${pl >= 0 ? 'green' : 'red'}" style="font-size:1.1rem; font-weight:800">
-                            ${pl >= 0 ? '+' : ''}$${pl.toLocaleString(undefined, {minimumFractionDigits:2})}
-                        </span>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end">
+                            <span class="stat-value ${pl >= 0 ? 'green' : 'red'}" style="font-size:1.1rem; font-weight:800">
+                                ${pl >= 0 ? '+' : ''}$${pl.toLocaleString(undefined, {minimumFractionDigits:2})}
+                            </span>
+                            <span class="mxn-small">MXN ${plMXN >= 0 ? '+' : ''}${Math.abs(plMXN).toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                        </div>
                     </div>
                 </div>
             `;
         });
 
-        updateHeader(totalMktValue, totalCost);
+        updateHeader(totalMktValue, totalCost, totalPL_MXN);
         renderChart(tickers, values);
         
         // Smooth transition out of loader
@@ -254,13 +279,14 @@
         }, 1000);
     }
 
-    function updateHeader(total, cost) {
+    function updateHeader(total, cost, totalPL_MXN = 0) {
         const pl = total - cost;
         const pct = (pl / cost) * 100;
         document.getElementById('mainBalance').innerText = `$${total.toLocaleString(undefined, {maximumFractionDigits:0})}`;
         const plText = document.getElementById('plText');
-        plText.innerText = `${pl >= 0 ? '+' : ''}$${pl.toLocaleString()} (${pct.toFixed(2)}%) Total Return`;
+        plText.innerText = `${pl >= 0 ? '+' : ''}$${pl.toLocaleString()} (${pct.toFixed(2)}%)`;
         plText.className = pl >= 0 ? 'green' : 'red';
+        document.getElementById('mainBalanceMXN').innerText = `MXN ${totalPL_MXN >= 0 ? '+' : ''}${totalPL_MXN.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     }
 
     function renderChart(labels, data) {
@@ -292,5 +318,8 @@
 
     updateDashboard();
 </script>
+    <footer style="max-width:1100px;margin:40px auto 20px auto;text-align:center;color:var(--text-dim);font-size:0.9rem">
+        © 2026 Whitebell International • <a href="#" style="color:var(--text-dim);text-decoration:underline">Privacy</a> • <a href="#" style="color:var(--text-dim);text-decoration:underline">Terms & Conditions</a>
+    </footer>
 </body>
 </html>
